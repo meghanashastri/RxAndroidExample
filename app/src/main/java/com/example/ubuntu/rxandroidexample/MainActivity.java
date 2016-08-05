@@ -19,6 +19,7 @@ public class MainActivity extends AppCompatActivity {
         Observable<String> myObservable = observable();
         Observer<String> myObserver = observer();
         Subscription mySubscription = myObservable.subscribe(myObserver);
+        mySubscription.unsubscribe();
     }
 
     private Observable<String> observable(){
