@@ -7,6 +7,7 @@ import android.util.Log;
 import rx.Observable;
 import rx.Observer;
 import rx.Subscription;
+import rx.functions.Action1;
 import rx.observers.Observers;
 
 public class MainActivity extends AppCompatActivity {
@@ -17,8 +18,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Observable<String> myObservable = observable();
-        Observer<String> myObserver = observer();
+       /* Observer<String> myObserver = observer();
         Subscription mySubscription = myObservable.subscribe(myObserver);
+        mySubscription.unsubscribe(); */
+
+        Action1<String> myAction = observerActionMethod();
+        Subscription mySubscription = myObservable.subscribe(myAction);
+        mySubscription.unsubscribe();
+
+
     }
 
     private Observable<String> observable(){
@@ -46,5 +54,19 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         return myObserver;
+    }
+
+    /*
+    This piece of code is used when onComplete() and onError()
+    methods are not required
+     */
+    private Action1<String> observerActionMethod(){
+        Action1<String> myAction = new Action1<String>() {
+            @Override
+            public void call(String s) {
+                Log.d("My Action", s);
+            }
+        };
+        return myAction;
     }
 }
