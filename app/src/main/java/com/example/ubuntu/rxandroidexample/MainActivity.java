@@ -4,28 +4,90 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONObject;
+
 import rx.Observable;
 import rx.Observer;
+import rx.Subscriber;
 import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 import rx.observers.Observers;
+import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
+    private RequestQueue mRequestQueue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Observable<String> myObservable = observable();
-        Observer<String> myObserver = observer();
-        Subscription mySubscription = myObservable.subscribe(myObserver);
-        mySubscription.unsubscribe();
+        observable();
+        observer();
     }
 
-    private Observable<String> observable(){
-        Observable<String> myObservable
-                = Observable.just("Hello"); // Emits "Hello"
-        return myObservable;
+    public RequestQueue getRequestQueue() {
+        if (mRequestQueue == null) {
+            mRequestQueue = Volley.newRequestQueue(getApplicationContext());
+        }
+        return mRequestQueue;
+    }
+
+    private void fetchData(String url){
+
+        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.GET,
+                url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.d("OnResponse", response.toString());
+                    }
+                }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                VolleyLog.d( "Error: " , error.getMessage());
+            }
+        });
+
+        getRequestQueue().add(jsonObjReq);
+    }
+
+    private void observable(){
+        Observable<String> fetchFromGoogle = Observable.create(new Observable.OnSubscribe<String>() {
+            @Override
+            public void call(Subscriber<? super String> subscriber) {
+                try {
+                    String data = "http://api.androidhive.info/volley/person_object.json";
+                    fetchData(data);
+                    subscriber.onNext(data); // Emit the contents of the URL
+                    subscriber.onCompleted(); // Nothing more to emit
+                }catch(Exception e){
+                    subscriber.onError(e); // In case there are network errors
+                }
+            }
+        });
+
+
+
+        fetchFromGoogle
+                .subscribeOn(Schedulers.newThread()) // Create a new Thread
+                .observeOn(AndroidSchedulers.mainThread()) // Use the UI thread
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        Log.d("New" , s); // Change a View
+                    }
+                });
     }
 
     private Observer<String> observer(){
